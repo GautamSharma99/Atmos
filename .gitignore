@@ -1,0 +1,38 @@
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+.venv/
+venv/
+
+# Airflow runtime
+airflow/logs/
+airflow/plugins/
+airflow/airflow.db
+airflow/standalone_admin_password.txt
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/**/*.ipynb_checkpoints/
+
+# Data
+data/
+*.parquet
+*.csv
+!tests/fixtures/*.csv
+!docs/*.csv
+
+# OS
+.DS_Store
+Thumbs.db

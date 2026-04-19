@@ -1,0 +1,15 @@
+{
+  "latitude": 28.6,
+  "longitude": 77.2,
+  "timezone": "UTC",
+  "hourly": {
+    "time": ["2025-11-12T00:00", "2025-11-12T01:00", "2025-11-12T02:00"],
+    "temperature_2m": [18.4, 17.9, 17.5],
+    "relative_humidity_2m": [62, 65, 67],
+    "wind_speed_10m": [3.1, 2.8, 2.5],
+    "wind_direction_10m": [310, 305, 300],
+    "precipitation": [0.0, 0.0, 0.0],
+    "surface_pressure": [1015.2, 1015.0, 1014.8],
+    "boundary_layer_height": [120, 110, null]
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "status": "ok",
+  "data": {
+    "aqi": 168,
+    "idx": 11277,
+    "city": {
+      "name": "ITO, Delhi, India",
+      "geo": [28.628, 77.241],
+      "url": "https://aqicn.org/city/india/delhi/ito/"
+    },
+    "dominentpol": "pm25",
+    "iaqi": {
+      "pm25": {"v": 168.0},
+      "pm10": {"v": 92.0},
+      "no2":  {"v": 31.4},
+      "so2":  {"v": 4.2},
+      "o3":   {"v": 18.5},
+      "co":   {"v": 6.7},
+      "t":    {"v": 22.0},
+      "h":    {"v": 41.0}
+    },
+    "time": {
+      "s": "2025-11-12 14:00:00",
+      "tz": "+05:30",
+      "iso": "2025-11-12T14:00:00+05:30"
+    },
+    "attributions": [
+      {"name": "Central Pollution Control Board", "url": "https://cpcb.nic.in/"}
+    ]
+  }
+}

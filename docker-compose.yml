@@ -1,0 +1,91 @@
+x-airflow-common: &airflow-common
+  build: ./airflow
+  platform: linux/amd64
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/airflow_meta
+    AIRFLOW_CONN_TIMESCALE_DEFAULT: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
+    AIRFLOW_VAR_AQICN_TOKEN: ${AQICN_TOKEN}
+    AIRFLOW_VAR_OPENAQ_API_KEY: ${OPENAQ_API_KEY}
+    AIRFLOW_VAR_FIRMS_MAP_KEY: ${FIRMS_MAP_KEY}
+    POSTGRES_HOST: timescaledb
+    POSTGRES_PORT: 5432
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    PYTHONPATH: /opt/airflow/dags:/opt/airquality/src
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./src:/opt/airquality/src
+    - ./sql:/opt/airquality/sql
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    timescaledb:
+      condition: service_healthy
+
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg16
+    container_name: aq_timescaledb
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/home/postgres/pgdata/data
+      - ./sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: aq_airflow_init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        PGPASSWORD=$${POSTGRES_PASSWORD} psql -h timescaledb -U $${POSTGRES_USER} -tc "SELECT 1 FROM pg_database WHERE datname='airflow_meta'" | grep -q 1 || \
+          PGPASSWORD=$${POSTGRES_PASSWORD} psql -h timescaledb -U $${POSTGRES_USER} -c "CREATE DATABASE airflow_meta;"
+        airflow db migrate
+        airflow users create --username "${AIRFLOW_ADMIN_USER}" --password "${AIRFLOW_ADMIN_PASSWORD}" \
+          --firstname Admin --lastname User --role Admin --email admin@example.com || true
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: aq_airflow_web
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: aq_airflow_sched
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  timescale_data:
