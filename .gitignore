@@ -1,2 +1,6 @@
 venv/
 .env
+dags/
+airflow/logs/
+airflow/config/
+airflow/plugins/
